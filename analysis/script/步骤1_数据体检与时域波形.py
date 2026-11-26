@@ -1,10 +1,10 @@
 """
-Step 1：数据体检与时域波形可视化
+步骤 1：数据体检与时域波形可视化
 产出：
-  1. analysis/result/data/step1_health_check.csv        -> 9组健康实测数据体检报告（含分段稳定性）
-  2. analysis/result/graphs/step1_01_dc_removal.png     -> 原始信号 vs 去直流偏置直观对比
-  3. analysis/result/graphs/step1_02_all9_overview.png  -> 9组健康实测整段时域波形全景（3x3）
-  4. analysis/result/graphs/step1_03_zoom_and_sim.png   -> 30Hz局部0.2s细节放大 + 健康仿真波形对照
+  1. analysis/result/data/步骤1_健康实测数据体检表.csv
+  2. analysis/result/graphs/步骤1_图1_去直流偏置前后对比.png
+  3. analysis/result/graphs/步骤1_图2_9组健康实测全景时域波形.png
+  4. analysis/result/graphs/步骤1_图3_30Hz局部波形与健康仿真对照.png
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import kurtosis
 
-from data_loader import (
+from 数据读取模块 import (
     HEALTH_CASES,
     RESULT_DATA_DIR,
     RESULT_GRAPH_DIR,
@@ -194,10 +194,10 @@ def main() -> None:
     RESULT_DATA_DIR.mkdir(parents=True, exist_ok=True)
     RESULT_GRAPH_DIR.mkdir(parents=True, exist_ok=True)
 
-    g1 = RESULT_GRAPH_DIR / "step1_01_dc_removal.png"
-    g2 = RESULT_GRAPH_DIR / "step1_02_all9_overview.png"
-    g3 = RESULT_GRAPH_DIR / "step1_03_zoom_and_sim.png"
-    csv_out = RESULT_DATA_DIR / "step1_health_check.csv"
+    g1 = RESULT_GRAPH_DIR / "步骤1_图1_去直流偏置前后对比.png"
+    g2 = RESULT_GRAPH_DIR / "步骤1_图2_9组健康实测全景时域波形.png"
+    g3 = RESULT_GRAPH_DIR / "步骤1_图3_30Hz局部波形与健康仿真对照.png"
+    csv_out = RESULT_DATA_DIR / "步骤1_健康实测数据体检表.csv"
 
     plot_dc_removal(g1)
     df = plot_all9_overview(g2)
