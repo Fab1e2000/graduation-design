@@ -86,7 +86,8 @@
 3. **设置历程输出（虚拟加速度计 @ 12800 Hz）**：
    - 点击 **`创建历程输出 (Create History Output)`**，名称 `H-Output-RP2`，分析步选 `Step-1`，点继续。
    - **域 (Domain)** 选 **`集合 (Set)`** → **`Set_RP2`**。
-   - **频率 (Frequency)** 选 **`时间间隔 (Time interval)`**，填入 **`7.8125e-5`**（即 $1/12800\text{ s} = 12800\text{ Hz}$）。
+   - **频率 (Frequency)** 选 **`每隔 x 单位时间 (Every x units of time)`**，填入 **`7.8125e-5`**（即 $1/12800\text{ s} = 12800\text{ Hz}$）。
+     > **注意**：不要选「均匀时间间隔 (Evenly spaced time intervals)」，那一项要求填整数段数（如 `0.05 s` 填 `640`，`0.5 s` 填 `6400`），填小数会报「不是整型值」。
    - **输出变量**：展开 **`位移/速度/加速度`**，勾选 **`A1`**、**`A2`**（X/Y 向加速度，其中 **`A2` 为主啮合切向方向**）；展开 **`力/反作用力`**，勾选 **`RF1`**、**`RF2`**。点 **确定**。
    - （可选）重复上述步骤，再建一个 `H-Output-RP1`，域选 `Set_RP1`。
 
@@ -99,7 +100,8 @@
 1. **创建接触属性**：
    - 点击 **`创建相互作用属性 (Create Interaction Property)`**，名称 `IntProp-Gear`，类型选 **`接触 (Contact)`**，点继续。
    - **`力学 → 切向行为`**：摩擦公式选 **`罚 (Penalty)`**，摩擦系数填 **`0.08`**。
-   - **`力学 → 法向行为`**：默认 **`硬接触 (Hard Contact)`**。点 **确定**。
+   - **`力学 → 法向行为`**：默认 **`硬接触 (Hard Contact)`**。
+   - **`几何属性 (Geometric Properties)`**：平面外厚度（Out-of-plane thickness / Contact area）填 **`15`**（与 15 mm 齿宽一致）。点 **确定**。
 2. **创建通用接触**：
    - 点击 **`创建相互作用 (Create Interaction)`**，名称 `Int-Contact`，分析步选 `Initial`，类型选 **`通用接触(显式) (General Contact (Explicit))`**，点继续。
    - 接触域保持 **`全部包含自身 (All* with self)`**，全局属性指派选 **`IntProp-Gear`**，点 **确定**。
@@ -108,17 +110,23 @@
    - 选择控制点：点选 **`RP-1`**，中键确认；曲面类型选 **`曲面 (Surface)`**，点击选中 **`Gear_29` 的内孔圆边**，中键确认（若提示选内侧/外侧，选指向实体的那一侧）。
    - 耦合类型选 **`运动学 (Kinematic)`**，勾选全部自由度 (`U1, U2, UR3`)，点 **确定**。
    - 同理创建 `Coup_95`：控制点选 **`RP-2`**，曲面选 **`Gear_95_Healthy` 的内孔圆边**。
-4. **添加 ER-16K 弹性轴承弹簧-阻尼（4 个，切勿刚性固支！）**：
-   - 顶部菜单 **`特殊 (Special)` → `弹簧/阻尼器 (Springs/Dashpots)` → `创建 (Create)`**。
-   - 类型选 **`连接点到地面 (Connect points to ground)`**，点继续。
-   - 依次建立以下 4 组（每次选点 → 中键确认 → 填自由度、刚度、阻尼）：
+4. **添加 ER-16K 弹性轴承接地连接器（切勿刚性固支，也勿用仅支持隐式的 `SPRING1/DASHPOT1`！）**：
+   > **为什么用连接器（Connector）？** Abaqus/Explicit（显式求解器）**不支持**「特殊 → 弹簧/阻尼器 → 连接点到地面」（会报 `SPRING1/DASHPOT1 IS NOT AVAILABLE IN Abaqus/Explicit`），必须改用显式原生支持的 **接地 `Cartesian` 连接器（`CONN2D2`）**。
+   - **① 创建两个连接器截面**：
+     - 顶部菜单 **`连接器 (Connector)` → `截面 (Section)` → `创建 (Create)`**，名称 `ConnSec_Bearing_RP1`，连接类型选 **`平动 (Translational)` → `笛卡尔 (Cartesian)`**，点继续。
+     - 在「行为选项 (Behavior Options)」中点 **`添加 (Add)`**：
+       - 选 **`弹性 (Elasticity)`**：勾选 `D11` 和 `D22`，均填入 **`100000`**（N/mm）；
+       - 再点 `添加`，选 **`阻尼 (Damping)`**：勾选 `C11` 和 `C22`，均填入 **`0.7`**（N·s/mm）；点 **确定**。
+     - 同理创建 `ConnSec_Bearing_RP2`：`Cartesian`，弹性 `D11 = D22 = 100000`，阻尼 `C11 = C22 = 1.5`。
+   - **② 创建接地连接线并指派截面**：
+     - 点击左侧 **`创建连接器构建器 (Connector Builder)`**（或菜单 **`特殊 → 连接器 → 创建连线特征`**），选 **`连接至地面 (Connect to ground)`**：
+       - 为 `RP-1` 创建接地线，截面选 `ConnSec_Bearing_RP1`；
+       - 为 `RP-2` 创建接地线，截面选 `ConnSec_Bearing_RP2`。
 
-| 名称 | 选择参考点 | 自由度 (DOF) | 弹簧刚度 $k$ (N/mm) | 阻尼系数 $c$ (N·s/mm) |
+| 轴承连接器 | 绑定参考点 | 连接类型 | X/Y 刚度 $D_{11}=D_{22}$ (N/mm) | X/Y 阻尼 $C_{11}=C_{22}$ (N·s/mm) |
 | :--- | :---: | :---: | :---: | :---: |
-| `Spring_RP1_X` | `RP-1` | `1`（X向） | `100000` | `0.7` |
-| `Spring_RP1_Y` | `RP-1` | `2`（Y向） | `100000` | `0.7` |
-| `Spring_RP2_X` | `RP-2` | `1`（X向） | `100000` | `1.5` |
-| `Spring_RP2_Y` | `RP-2` | `2`（Y向） | `100000` | `1.5` |
+| `ConnSec_Bearing_RP1` | `RP-1` ↔ 地面 | `Cartesian` | `100000` | `0.7` |
+| `ConnSec_Bearing_RP2` | `RP-2` ↔ 地面 | `Cartesian` | `100000` | `1.5` |
 
 ---
 
