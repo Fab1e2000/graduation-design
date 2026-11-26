@@ -90,7 +90,6 @@
 - [x] 整理定轴齿轮箱物理结构与参数文档（`docs/定轴齿轮箱技术参数说明书.docx`）
 - [x] 建立三角形三轴布置 3D 交互运动模型，含 `SS1.5-95` 缺齿切换（`models/定轴齿轮箱三维运动模型.html`）
 - [x] 确定 Abaqus 路线一简化仿真方案与参数，完成可视化模型示意（`models/Abaqus第一级仿真模型示意.html`）
-- [x] 在 Abaqus 中搭建第一级健康/缺齿双模型工程，完成健康基准 `Job-Healthy`（0.5 s）计算并导出 `12800 Hz` 振动信号
-- [ ] 运行缺齿算例 `Job-Missing`（0.5 s）并导出对比振动信号
+- [x] 在 Abaqus 中搭建第一级健康/缺齿双模型工程，完成健康基准 `Job-Healthy` 与缺齿故障 `Job-Missing`（均为 0.5 s / 30 Hz）计算并导出 `12800 Hz` 振动信号
 - [ ] 开发 `analysis/script/` 振动数据读取、预处理、时频/包络特征提取程序，并将特征表与图表分别输出至 `analysis/result/data/` 与 `analysis/result/graphs/`
 - [ ] 后续补充行星级建模、有效实测/现场数据验证、A0 图纸及论文撰写
