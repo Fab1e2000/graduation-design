@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>二级定轴齿轮箱 · 三维运动仿真模型</title>
+  <style>
+    :root {
+      --bg-top: #f4f6f9;
+      --bg-bot: #e6ebf2;
+      --panel-bg: rgba(255, 255, 255, 0.86);
+      --panel-border: rgba(15, 23, 42, 0.08);
+      --text-main: #0f172a;
+      --text-sub: #475569;
+      --text-muted: #64748b;
+      --accent: #2563eb;
+      --accent-soft: rgba(37, 99, 235, 0.1);
+      --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+      background: radial-gradient(circle at 50% 35%, var(--bg-top) 0%, var(--bg-bot) 100%);
+      color: var(--text-main);
+      user-select: none;
+    }
+
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    /* Top-left title card */
+    .header-card {
+      position: fixed;
+      top: 18px;
+      left: 20px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      box-shadow: var(--shadow);
+      z-index: 20;
+      max-width: 310px;
+    }
+
+    .header-title {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-badge {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--accent);
+      background: var(--accent-soft);
+      padding: 2px 7px;
+      border-radius: 999px;
+    }
+
+    .header-sub {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Bottom-left compact live telemetry */
+    .telemetry-card {
+      position: fixed;
+      bottom: 18px;
+      left: 20px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+      z-index: 20;
+      min-width: 268px;
+    }
+
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: auto 1fr 1fr;
+      gap: 5px 14px;
+      font-size: 12px;
+      align-items: center;
+    }
+
+    .telemetry-head {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 500;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+    }
+
+    .dot {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+
+    .telemetry-divider {
+      grid-column: 1 / -1;
+      height: 1px;
+      background: rgba(15, 23, 42, 0.06);
+      margin: 4px 0;
+    }
+
+    .gmf-row {
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: space-between;
+      font-size: 11.5px;
+      color: var(--text-sub);
+    }
+
+    /* Right compact control panel */
+    .control-panel {
+      position: fixed;
+      top: 18px;
+      right: 20px;
+      width: 248px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: var(--shadow);
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      letter-spacing: 0.4px;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .btn-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+
+    .btn-group.two {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    button {
+      appearance: none;
+      border: 1px solid rgba(15, 23, 42, 0.1);
+      background: rgba(255, 255, 255, 0.85);
+      color: var(--text-main);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    button:hover {
+      border-color: rgba(37, 99, 235, 0.4);
+      background: #ffffff;
+    }
+
+    button.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .toggle-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .toggle-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-sub);
+      cursor: pointer;
+    }
+
+    .toggle-item input {
+      accent-color: var(--accent);
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+    }
+
+    /* Hint pill */
+    .hint-pill {
+      position: fixed;
+      bottom: 18px;
+      right: 20px;
+      font-size: 11.5px;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--panel-border);
+      padding: 6px 12px;
+      border-radius: 999px;
+      z-index: 20;
+    }
+
+    /* Restrained 3D Floating Callout Labels */
+    #labels-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 10;
+    }
+
+    .callout {
+      position: absolute;
+      transform: translate(-50%, -100%);
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border: 1px solid rgba(15, 23, 42, 0.12);
+      border-radius: 7px;
+      padding: 4px 8px;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+      white-space: nowrap;
+      transition: opacity 0.15s ease;
+    }
+
+    .callout::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -5px;
+      transform: translateX(-50%);
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--pin-color, #2563eb);
+      border: 1.5px solid #fff;
+      box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.15);
+    }
+
+    .callout-title {
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text-main);
+      line-height: 1.3;
+    }
+
+    .callout-meta {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      line-height: 1.3;
+    }
+
+    #offline-msg {
+      display: none;
+      position: fixed;
+      inset: 0;
+      align-items: center;
+      justify-content: center;
+      background: rgba(244, 246, 249, 0.96);
+      z-index: 99;
+      padding: 24px;
+      text-align: center;
+      color: var(--text-main);
+    }
+  </style>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="canvas-container"></div>
+  <div id="labels-layer"></div>
+
+  <div class="header-card">
+    <div class="header-title">
+      二级定轴齿轮箱 · 运动模型
+      <span class="header-badge">i = 8.190</span>
+    </div>
+    <div class="header-sub">
+      模数 m = 1.5 mm · 三轴三角形空间布置<br />
+      级1: 29/95 (a=93.0) · 级2: 36/90 (a=94.5)
+    </div>
+  </div>
+
+  <div class="telemetry-card">
+    <div class="telemetry-grid">
+      <div class="telemetry-head">轴系</div>
+      <div class="telemetry-head mono">转速 (rpm)</div>
+      <div class="telemetry-head mono">转频 (Hz)</div>
+
+      <div><span class="dot" style="background:#2563eb"></span>输入轴</div>
+      <div class="mono" id="val-rpm-in">1200.0</div>
+      <div class="mono" id="val-hz-in">20.00</div>
+
+      <div><span class="dot" style="background:#d97706"></span>中间轴</div>
+      <div class="mono" id="val-rpm-mid">366.3</div>
+      <div class="mono" id="val-hz-mid">6.11</div>
+
+      <div><span class="dot" style="background:#059669"></span>输出轴</div>
+      <div class="mono" id="val-rpm-out">146.5</div>
+      <div class="mono" id="val-hz-out">2.44</div>
+
+      <div class="telemetry-divider"></div>
+      <div class="gmf-row">
+        <span>一级啮合 f<sub>m1</sub></span>
+        <span class="mono" id="val-gmf1">580.0 Hz</span>
+      </div>
+      <div class="gmf-row">
+        <span>二级啮合 f<sub>m2</sub></span>
+        <span class="mono" id="val-gmf2">219.8 Hz</span>
+      </div>
+      <div class="gmf-row" id="row-fault-freq" style="display:none;color:#dc2626;font-weight:600;">
+        <span>缺齿冲击 f<sub>mid</sub></span>
+        <span class="mono" id="val-fault-hz">6.11 Hz</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="control-panel">
+    <div>
+      <div class="section-label"><span>齿轮状态</span></div>
+      <div class="btn-group two">
+        <button class="state-btn active" data-state="healthy">健康状态</button>
+        <button class="state-btn" data-state="missing">SS1.5-95 缺齿</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label"><span>运行工况 (输入转频)</span></div>
+      <div class="btn-group">
+        <button class="cond-btn" data-hz="10">10 Hz</button>
+        <button class="cond-btn active" data-hz="20">20 Hz</button>
+        <button class="cond-btn" data-hz="30">30 Hz</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label">
+        <span>慢放倍率</span>
+        <span class="mono" id="val-timescale">0.04×</span>
+      </div>
+      <div class="slider-row">
+        <button id="btn-play" style="width:62px;">暂停</button>
+        <input id="slider-scale" type="range" min="0.005" max="0.25" step="0.005" value="0.04" />
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label"><span>视角预设</span></div>
+      <div class="btn-group two">
+        <button class="view-btn" data-view="iso">等轴测</button>
+        <button class="view-btn" data-view="front">正视图</button>
+        <button class="view-btn" data-view="side">侧视图</button>
+        <button class="view-btn" data-view="top">俯视图</button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-label"><span>显示选项</span></div>
+      <div class="toggle-list">
+        <label class="toggle-item">
+          <span>关键结构标注</span>
+          <input type="checkbox" id="chk-labels" checked />
+        </label>
+        <label class="toggle-item">
+          <span>半透明箱体外壳</span>
+          <input type="checkbox" id="chk-housing" checked />
+        </label>
+        <label class="toggle-item">
+          <span>分度圆与啮合点</span>
+          <input type="checkbox" id="chk-pitch" />
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="hint-pill">左键拖动旋转 · 滚轮缩放 · 右键平移</div>
+
+  <div id="offline-msg">
+    <div>
+      <h3>无法加载 Three.js 模块</h3>
+      <p style="margin-top:8px;color:#475569;font-size:13px;">
+        请确保当前设备已连接网络（用于加载 jsDelivr CDN 上的 Three.js），并刷新页面。
+      </p>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+    // ==================== 1. Gearbox Exact Parameters (mm) ====================
+    const MOD = 1.5;
+    const Z1 = 29;  // Input shaft pinion (SS1.5-29)
+    const Z2 = 95;  // Intermediate shaft gear (SS1.5-95)
+    const Z3 = 36;  // Intermediate shaft pinion (SS1.5-36)
+    const Z4 = 90;  // Output shaft gear (SS1.5-90)
+
+    const R1 = (MOD * Z1) / 2; // 21.75 mm
+    const R2 = (MOD * Z2) / 2; // 71.25 mm
+    const R3 = (MOD * Z3) / 2; // 27.00 mm
+    const R4 = (MOD * Z4) / 2; // 67.50 mm
+
+    const A1 = R1 + R2; // 93.0 mm
+    const A2 = R3 + R4; // 94.5 mm
+
+    const FACE_W = 15.0;      // KHK SS1.5 standard face width (mm)
+    const Z_STAGE1 = -22.0;   // Axial center of Stage 1 (rear/input-side plane)
+    const Z_STAGE2 = 22.0;    // Axial center of Stage 2 (front/output-side plane)
+    const Z_BRG_L = -52.0;    // Rear bearing plane
+    const Z_BRG_R = 52.0;     // Front bearing plane
+    const SHAFT_R = 12.7;     // ER-16K bore radius (1" = 25.4 mm dia)
+
+    // Triangular shaft layout (front view: Input bottom-right, Mid top, Output bottom-left)
+    // Exact center distances: dist(In, Mid) = A1 = 93.0 mm, dist(Mid, Out) = A2 = 94.5 mm
+    const L_BASE = 104.0;
+    const X_OUT = -L_BASE / 2; // -52.00 mm (bottom-left)
+    const X_IN  =  L_BASE / 2; // +52.00 mm (bottom-right)
+    const X_MID = (A2 * A2 - A1 * A1) / (2 * L_BASE); // +1.3522 mm (top)
+    const H_TRI = Math.sqrt(A1 * A1 - (X_IN - X_MID) * (X_IN - X_MID)); // 77.999 mm
+
+    const Y_IN  = -H_TRI / 2; // -39.00 mm
+    const Y_OUT = -H_TRI / 2; // -39.00 mm
+    const Y_MID =  H_TRI / 2; // +39.00 mm
+
+    const ALPHA_12 = Math.atan2(Y_MID - Y_IN, X_MID - X_IN);
+    const ALPHA_34 = Math.atan2(Y_OUT - Y_MID, X_OUT - X_MID);
+
+    const ER16K_FTF = 0.402;
+    const ER16K_BALLS = 9;
+
+    // ==================== 2. Scene, Camera, Renderer ====================
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+
+    const camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 1, 2500);
+    camera.position.set(210, 125, 315);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.08;
+    container.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.target.set(0, 0, 0);
+    controls.minDistance = 110;
+    controls.maxDistance = 900;
+
+    // Studio Lighting
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xcbd5e1, 1.15);
+    hemiLight.position.set(0, 300, 0);
+    scene.add(hemiLight);
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
+    keyLight.position.set(220, 280, 240);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(2048, 2048);
+    keyLight.shadow.camera.near = 50;
+    keyLight.shadow.camera.far = 900;
+    const d = 220;
+    keyLight.shadow.camera.left = -d;
+    keyLight.shadow.camera.right = d;
+    keyLight.shadow.camera.top = d;
+    keyLight.shadow.camera.bottom = -d;
+    keyLight.shadow.bias = -0.0005;
+    scene.add(keyLight);
+
+    const rimLight = new THREE.DirectionalLight(0xdbeafe, 0.75);
+    rimLight.position.set(-240, -100, -180);
+    scene.add(rimLight);
+
+    // Subtle ground grid below gearbox
+    const grid = new THREE.GridHelper(520, 26, 0x94a3b8, 0xcbd5e1);
+    grid.position.y = Y_OUT - R4 - 26;
+    grid.material.opacity = 0.35;
+    grid.material.transparent = true;
+    scene.add(grid);
+
+    // ==================== 3. Materials ====================
+    const matGear1 = new THREE.MeshStandardMaterial({ color: 0x3b82f6, metalness: 0.55, roughness: 0.32 }); // Input blue steel
+    const matGear2 = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.52, roughness: 0.35 }); // Mid bronze-amber
+    const matGear3 = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.52, roughness: 0.32 }); // Mid pinion gold
+    const matGear4 = new THREE.MeshStandardMaterial({ color: 0x10b981, metalness: 0.52, roughness: 0.34 }); // Output emerald steel
+    const matShaft = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.82, roughness: 0.22 });
+    const matBearingRing = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.78, roughness: 0.28 });
+    const matBearingBall = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.92, roughness: 0.12 });
+    const matHousing = new THREE.MeshPhysicalMaterial({
+      color: 0xe2e8f0,
+      metalness: 0.05,
+      roughness: 0.15,
+      transmission: 0.65,
+      transparent: true,
+      opacity: 0.26,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+    const matHousingEdge = new THREE.LineBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.4 });
+
+    // ==================== 4. Parametric Involute-Profile Gear Builder ====================
+    function createSpurGear(Z, m, width, boreRadius, material, withHoles = false, missingToothIndex = -1) {
+      const rPitch = (m * Z) / 2;
+      const rTip = rPitch + 0.95 * m;
+      const rRoot = rPitch - 1.2 * m;
+      const pitchStep = (2 * Math.PI) / Z;
+
+      // Half angular thickness of tooth at pitch circle = pitchStep / 4
+      // Slight taper from root to tip approximating 20° involute profile
+      const halfRoot = pitchStep * 0.31;
+      const halfPitch = pitchStep * 0.245;
+      const halfTip = pitchStep * 0.145;
+
+      const shape = new THREE.Shape();
+      for (let i = 0; i < Z; i++) {
+        const a = i * pitchStep; // Tooth #0 centered at angle 0 (+X)
+        const p0 = [rRoot * Math.cos(a - halfRoot), rRoot * Math.sin(a - halfRoot)];
+        const p5 = [rRoot * Math.cos(a + halfRoot), rRoot * Math.sin(a + halfRoot)];
+
+        if (i === 0) shape.moveTo(p0[0], p0[1]);
+        else shape.lineTo(p0[0], p0[1]);
+
+        if (i === missingToothIndex) {
+          // Completely missing tooth: trace flat/arc along the root circle
+          const pm = [rRoot * Math.cos(a), rRoot * Math.sin(a)];
+          shape.lineTo(pm[0], pm[1]);
+          shape.lineTo(p5[0], p5[1]);
+        } else {
+          const p1 = [rPitch * Math.cos(a - halfPitch), rPitch * Math.sin(a - halfPitch)];
+          const p2 = [rTip * Math.cos(a - halfTip), rTip * Math.sin(a - halfTip)];
+          const p3 = [rTip * Math.cos(a + halfTip), rTip * Math.sin(a + halfTip)];
+          const p4 = [rPitch * Math.cos(a + halfPitch), rPitch * Math.sin(a + halfPitch)];
+          shape.lineTo(p1[0], p1[1]);
+          shape.lineTo(p2[0], p2[1]);
+          shape.lineTo(p3[0], p3[1]);
+          shape.lineTo(p4[0], p4[1]);
+          shape.lineTo(p5[0], p5[1]);
+        }
+      }
+      shape.closePath();
+
+      // Center bore hole
+      const bore = new THREE.Path();
+      bore.absarc(0, 0, boreRadius, 0, Math.PI * 2, true);
+      shape.holes.push(bore);
+
+      // Lightening holes on large gears so rotation is immediately readable
+      if (withHoles && rRoot > boreRadius + 28) {
+        const holeCount = 6;
+        const holeOrbit = (boreRadius + 10 + rRoot - 12) / 2;
+        const holeR = Math.min(11, (rRoot - boreRadius) * 0.22);
+        for (let h = 0; h < holeCount; h++) {
+          const ang = (h * Math.PI * 2) / holeCount;
+          const hp = new THREE.Path();
+          hp.absarc(holeOrbit * Math.cos(ang), holeOrbit * Math.sin(ang), holeR, 0, Math.PI * 2, true);
+          shape.holes.push(hp);
+        }
+      }
+
+      const extrudeSettings = {
+        depth: width,
+        bevelEnabled: true,
+        bevelThickness: 0.45,
+        bevelSize: 0.35,
+        bevelSegments: 2,
+        curveSegments: 8
+      };
+
+      const geom = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+      geom.translate(0, 0, -width / 2);
+
+      const group = new THREE.Group();
+      const mesh = new THREE.Mesh(geom, material);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      group.add(mesh);
+
+      // Subtle red fracture-root highlight marker for missing tooth visibility
+      if (missingToothIndex >= 0) {
+        const aMiss = missingToothIndex * pitchStep;
+        const arcW = rRoot * pitchStep * 0.68;
+        const markGeo = new THREE.BoxGeometry(1.6, arcW, width + 1.0);
+        const markMat = new THREE.MeshStandardMaterial({
+          color: 0xdc2626,
+          emissive: 0x991b1b,
+          emissiveIntensity: 0.35,
+          roughness: 0.4
+        });
+        const mark = new THREE.Mesh(markGeo, markMat);
+        mark.position.set(rRoot * Math.cos(aMiss), rRoot * Math.sin(aMiss), 0);
+        mark.rotation.z = aMiss;
+        group.add(mark);
+      }
+
+      // Hub boss
+      const hubOuter = Math.min(boreRadius + 7.5, rRoot - 2.5);
+      if (hubOuter > boreRadius + 1.5) {
+        const hubShape = new THREE.Shape();
+        hubShape.absarc(0, 0, hubOuter, 0, Math.PI * 2, false);
+        const hubHole = new THREE.Path();
+        hubHole.absarc(0, 0, boreRadius, 0, Math.PI * 2, true);
+        hubShape.holes.push(hubHole);
+        const hubGeo = new THREE.ExtrudeGeometry(hubShape, { depth: width + 4, bevelEnabled: false });
+        hubGeo.translate(0, 0, -(width + 4) / 2);
+        const hubMesh = new THREE.Mesh(hubGeo, material);
+        hubMesh.castShadow = true;
+        group.add(hubMesh);
+      }
+
+      return group;
+    }
+
+    // ==================== 5. ER-16K Bearing Builder ====================
+    function createBearingER16K() {
+      const group = new THREE.Group();
+      const rIn = SHAFT_R;       // 12.7 mm
+      const rOut = 26.0;         // 52 mm OD
+      const width = 14.0;
+      const rPitch = 19.25;      // 1.516" = 38.5 mm pitch dia
+      const ballR = 3.97;        // 0.3125" = 7.94 mm dia
+
+      // Outer race
+      const outerShape = new THREE.Shape();
+      outerShape.absarc(0, 0, rOut, 0, Math.PI * 2, false);
+      const outerHole = new THREE.Path();
+      outerHole.absarc(0, 0, rPitch + 2.4, 0, Math.PI * 2, true);
+      outerShape.holes.push(outerHole);
+      const outerGeo = new THREE.ExtrudeGeometry(outerShape, { depth: width, bevelEnabled: true, bevelSize: 0.4, bevelThickness: 0.4, bevelSegments: 1 });
+      outerGeo.translate(0, 0, -width / 2);
+      const outerMesh = new THREE.Mesh(outerGeo, matBearingRing);
+      group.add(outerMesh);
+
+      // Inner race
+      const innerShape = new THREE.Shape();
+      innerShape.absarc(0, 0, rPitch - 2.4, 0, Math.PI * 2, false);
+      const innerHole = new THREE.Path();
+      innerHole.absarc(0, 0, rIn, 0, Math.PI * 2, true);
+      innerShape.holes.push(innerHole);
+      const innerGeo = new THREE.ExtrudeGeometry(innerShape, { depth: width + 2, bevelEnabled: true, bevelSize: 0.3, bevelThickness: 0.3, bevelSegments: 1 });
+      innerGeo.translate(0, 0, -(width + 2) / 2);
+      const innerMesh = new THREE.Mesh(innerGeo, matBearingRing);
+      group.add(innerMesh);
+
+      // 9 Rolling elements (cage group rotates at FTF * shaft speed)
+      const cage = new THREE.Group();
+      const ballGeo = new THREE.SphereGeometry(ballR, 14, 12);
+      for (let i = 0; i < ER16K_BALLS; i++) {
+        const ang = (i * Math.PI * 2) / ER16K_BALLS;
+        const ball = new THREE.Mesh(ballGeo, matBearingBall);
+        ball.position.set(rPitch * Math.cos(ang), rPitch * Math.sin(ang), 0);
+        cage.add(ball);
+      }
+      group.add(cage);
+      return { group, cage };
+    }
+
+    // ==================== 6. Shaft Builder ====================
+    function createShaft(length, zCenter, hasKey = true) {
+      const grp = new THREE.Group();
+      const geo = new THREE.CylinderGeometry(SHAFT_R, SHAFT_R, length, 32);
+      geo.rotateX(Math.PI / 2);
+      const mesh = new THREE.Mesh(geo, matShaft);
+      mesh.position.z = zCenter;
+      mesh.castShadow = true;
+      grp.add(mesh);
+
+      // Subtle keyway marker stripe so shaft rotation is clearly visible
+      if (hasKey) {
+        const keyGeo = new THREE.BoxGeometry(3.2, 2.2, length * 0.72);
+        const keyMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7, roughness: 0.4 });
+        const key = new THREE.Mesh(keyGeo, keyMat);
+        key.position.set(0, SHAFT_R - 0.5, zCenter);
+        grp.add(key);
+      }
+      return grp;
+    }
+
+    // ==================== 7. Assemble Gearbox ====================
+    const gearbox = new THREE.Group();
+    scene.add(gearbox);
+
+    // --- Input Shaft Assembly (Bottom-Right: x = +52.0, y = -39.0) ---
+    const inputAsm = new THREE.Group();
+    inputAsm.position.set(X_IN, Y_IN, 0);
+    inputAsm.add(createShaft(164, -18)); // Protrudes toward -Z (motor side)
+    const gear1 = createSpurGear(Z1, MOD, FACE_W, SHAFT_R, matGear1, false);
+    gear1.position.z = Z_STAGE1;
+    // Exact mesh phase: tooth #0 of gear1 points directly toward Mid shaft
+    gear1.rotation.z = ALPHA_12;
+    inputAsm.add(gear1);
+    gearbox.add(inputAsm);
+
+    // --- Intermediate Shaft Assembly (Top: x = +1.35, y = +39.0) ---
+    const midAsm = new THREE.Group();
+    midAsm.position.set(X_MID, Y_MID, 0);
+    midAsm.add(createShaft(126, 0));
+    const gear2Healthy = createSpurGear(Z2, MOD, FACE_W, SHAFT_R, matGear2, true, -1);
+    gear2Healthy.position.z = Z_STAGE1;
+    // Exact mesh phase: tooth space of gear2 faces Input shaft
+    gear2Healthy.rotation.z = ALPHA_12 + Math.PI + Math.PI / Z2;
+    midAsm.add(gear2Healthy);
+
+    const gear2Missing = createSpurGear(Z2, MOD, FACE_W, SHAFT_R, matGear2, true, 0);
+    gear2Missing.position.z = Z_STAGE1;
+    gear2Missing.rotation.z = ALPHA_12 + Math.PI + Math.PI / Z2;
+    gear2Missing.visible = false;
+    midAsm.add(gear2Missing);
+
+    const gear3 = createSpurGear(Z3, MOD, FACE_W, SHAFT_R, matGear3, false);
+    gear3.position.z = Z_STAGE2;
+    // Exact mesh phase: tooth #0 of gear3 points directly toward Output shaft
+    gear3.rotation.z = ALPHA_34;
+    midAsm.add(gear3);
+    gearbox.add(midAsm);
+
+    // --- Output Shaft Assembly (Bottom-Left: x = -52.0, y = -39.0) ---
+    const outAsm = new THREE.Group();
+    outAsm.position.set(X_OUT, Y_OUT, 0);
+    outAsm.add(createShaft(164, 18)); // Protrudes toward +Z (output side)
+    const gear4 = createSpurGear(Z4, MOD, FACE_W, SHAFT_R, matGear4, true);
+    gear4.position.z = Z_STAGE2;
+    // Exact mesh phase: tooth space of gear4 faces Mid shaft
+    gear4.rotation.z = ALPHA_34 + Math.PI + Math.PI / Z4;
+    outAsm.add(gear4);
+    gearbox.add(outAsm);
+
+    // --- 6 × ER-16K Bearings ---
+    const bearingCages = { in: [], mid: [], out: [] };
+    const shaftDefs = [
+      { key: 'in',  x: X_IN,  y: Y_IN },
+      { key: 'mid', x: X_MID, y: Y_MID },
+      { key: 'out', x: X_OUT, y: Y_OUT }
+    ];
+    for (const s of shaftDefs) {
+      for (const zPos of [Z_BRG_L, Z_BRG_R]) {
+        const b = createBearingER16K();
+        b.group.position.set(s.x, s.y, zPos);
+        gearbox.add(b.group);
+        bearingCages[s.key].push(b.cage);
+      }
+    }
+
+    // --- Semi-transparent Housing (Compact Triangular Gearbox Casing) ---
+    const housingGroup = new THREE.Group();
+    const hW = 248;
+    const hH = 246;
+    const hD = 122;
+    const hCenterX = -16;
+    const hCenterY = (Y_MID + R2 + Y_OUT - R4) / 2;
+    const boxGeo = new THREE.BoxGeometry(hW, hH, hD);
+    const boxMesh = new THREE.Mesh(boxGeo, matHousing);
+    boxMesh.position.set(hCenterX, hCenterY, 0);
+    housingGroup.add(boxMesh);
+
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(boxGeo), matHousingEdge);
+    edges.position.copy(boxMesh.position);
+    housingGroup.add(edges);
+
+    // Baseplate
+    const baseGeo = new THREE.BoxGeometry(hW + 44, 12, hD + 36);
+    const baseMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, metalness: 0.35, roughness: 0.55 });
+    const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+    baseMesh.position.set(hCenterX, Y_OUT - R4 - 20, 0);
+    baseMesh.receiveShadow = true;
+    housingGroup.add(baseMesh);
+    gearbox.add(housingGroup);
+
+    // --- Pitch Circles & Mesh Points Overlay (off by default, toggleable) ---
+    const pitchGroup = new THREE.Group();
+    pitchGroup.visible = false;
+    function addPitchCircle(r, cx, cy, z, color) {
+      const pts = [];
+      for (let i = 0; i <= 96; i++) {
+        const a = (i / 96) * Math.PI * 2;
+        pts.push(new THREE.Vector3(cx + r * Math.cos(a), cy + r * Math.sin(a), z));
+      }
+      const line = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(pts),
+        new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.85 })
+      );
+      pitchGroup.add(line);
+    }
+    addPitchCircle(R1, X_IN,  Y_IN,  Z_STAGE1 + FACE_W / 2 + 1, 0x2563eb);
+    addPitchCircle(R2, X_MID, Y_MID, Z_STAGE1 + FACE_W / 2 + 1, 0xd97706);
+    addPitchCircle(R3, X_MID, Y_MID, Z_STAGE2 + FACE_W / 2 + 1, 0xf59e0b);
+    addPitchCircle(R4, X_OUT, Y_OUT, Z_STAGE2 + FACE_W / 2 + 1, 0x059669);
+
+    // Two exact mesh contact dots along centerlines
+    const dotGeo = new THREE.SphereGeometry(2.8, 16, 16);
+    const dotMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+    const dot1 = new THREE.Mesh(dotGeo, dotMat);
+    dot1.position.set(
+      X_IN + R1 * Math.cos(ALPHA_12),
+      Y_IN + R1 * Math.sin(ALPHA_12),
+      Z_STAGE1 + FACE_W / 2 + 1.2
+    );
+    const dot2 = new THREE.Mesh(dotGeo, dotMat);
+    dot2.position.set(
+      X_MID + R3 * Math.cos(ALPHA_34),
+      Y_MID + R3 * Math.sin(ALPHA_34),
+      Z_STAGE2 + FACE_W / 2 + 1.2
+    );
+    pitchGroup.add(dot1, dot2);
+
+    // Subtle dashed triangle connecting the 3 shaft centers on front face
+    const triPts = [
+      new THREE.Vector3(X_IN,  Y_IN,  Z_BRG_R + 12),
+      new THREE.Vector3(X_MID, Y_MID, Z_BRG_R + 12),
+      new THREE.Vector3(X_OUT, Y_OUT, Z_BRG_R + 12),
+      new THREE.Vector3(X_IN,  Y_IN,  Z_BRG_R + 12)
+    ];
+    const triLine = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(triPts),
+      new THREE.LineBasicMaterial({ color: 0x64748b, transparent: true, opacity: 0.55 })
+    );
+    pitchGroup.add(triLine);
+    gearbox.add(pitchGroup);
+
+    // ==================== 8. Restrained 3D Floating Annotations ====================
+    const labelsLayer = document.getElementById('labels-layer');
+    const calloutDefs = [
+      {
+        title: '输入轴（右下）· SS1.5-29',
+        meta: 'd = 43.5 mm · 电机侧输入',
+        pos: new THREE.Vector3(X_IN + 18, Y_IN - 20, -68),
+        color: '#2563eb'
+      },
+      {
+        title: '中间轴（上方）· SS1.5-95 / 36',
+        meta: 'd = 142.5 / 54.0 mm',
+        pos: new THREE.Vector3(X_MID, Y_MID + R2 + 10, 0),
+        color: '#d97706'
+      },
+      {
+        title: '输出轴（左下）· SS1.5-90',
+        meta: 'd = 135.0 mm · 减速输出',
+        pos: new THREE.Vector3(X_OUT - 18, Y_OUT - R4 - 2, 62),
+        color: '#059669'
+      },
+      {
+        title: 'ER-16K 轴承 (×6)',
+        meta: 'N=9 · BPFO=3.572 · BPFI=5.43',
+        pos: new THREE.Vector3(X_IN + 28, Y_IN + 14, Z_BRG_R),
+        color: '#475569'
+      }
+    ];
+
+    const calloutEls = calloutDefs.map(def => {
+      const el = document.createElement('div');
+      el.className = 'callout';
+      el.style.setProperty('--pin-color', def.color);
+      el.innerHTML = `<div class="callout-title">${def.title}</div><div class="callout-meta">${def.meta}</div>`;
+      labelsLayer.appendChild(el);
+      return { el, pos: def.pos };
+    });
+
+    const tmpVec = new THREE.Vector3();
+    function updateCallouts() {
+      const show = document.getElementById('chk-labels').checked;
+      labelsLayer.style.display = show ? 'block' : 'none';
+      if (!show) return;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      for (const item of calloutEls) {
+        tmpVec.copy(item.pos).project(camera);
+        if (tmpVec.z > 1) {
+          item.el.style.opacity = '0';
+          continue;
+        }
+        const x = (tmpVec.x * 0.5 + 0.5) * w;
+        const y = (-tmpVec.y * 0.5 + 0.5) * h - 10;
+        item.el.style.left = `${x}px`;
+        item.el.style.top = `${y}px`;
+        item.el.style.opacity = '1';
+      }
+    }
+
+    // ==================== 9. Simulation State & UI Bindings ====================
+    let inputHz = 20.0;
+    let timeScale = 0.04;
+    let playing = true;
+    let thetaIn = 0;
+
+    function updateTelemetry() {
+      const fIn = inputHz;
+      const fMid = fIn * (Z1 / Z2);
+      const fOut = fMid * (Z3 / Z4);
+      const gmf1 = Z1 * fIn;
+      const gmf2 = Z3 * fMid;
+
+      document.getElementById('val-rpm-in').textContent = (fIn * 60).toFixed(1);
+      document.getElementById('val-hz-in').textContent = fIn.toFixed(2);
+      document.getElementById('val-rpm-mid').textContent = (fMid * 60).toFixed(1);
+      document.getElementById('val-hz-mid').textContent = fMid.toFixed(2);
+      document.getElementById('val-rpm-out').textContent = (fOut * 60).toFixed(1);
+      document.getElementById('val-hz-out').textContent = fOut.toFixed(2);
+      document.getElementById('val-gmf1').textContent = `${gmf1.toFixed(1)} Hz`;
+      document.getElementById('val-gmf2').textContent = `${gmf2.toFixed(1)} Hz`;
+      document.getElementById('val-fault-hz').textContent = `${fMid.toFixed(2)} Hz`;
+    }
+    updateTelemetry();
+
+    // Gear state switcher (Healthy vs SS1.5-95 Missing Tooth)
+    document.querySelectorAll('.state-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.state-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const isMissing = btn.dataset.state === 'missing';
+        gear2Healthy.visible = !isMissing;
+        gear2Missing.visible = isMissing;
+        document.getElementById('row-fault-freq').style.display = isMissing ? 'flex' : 'none';
+        calloutEls[1].el.querySelector('.callout-meta').textContent = isMissing
+          ? 'd = 142.5 / 54.0 mm · 95齿单齿缺失'
+          : 'd = 142.5 / 54.0 mm';
+      });
+    });
+
+    document.querySelectorAll('.cond-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.cond-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        inputHz = parseFloat(btn.dataset.hz);
+        updateTelemetry();
+      });
+    });
+
+    const btnPlay = document.getElementById('btn-play');
+    btnPlay.addEventListener('click', () => {
+      playing = !playing;
+      btnPlay.textContent = playing ? '暂停' : '播放';
+    });
+
+    const sliderScale = document.getElementById('slider-scale');
+    const valScale = document.getElementById('val-timescale');
+    sliderScale.addEventListener('input', () => {
+      timeScale = parseFloat(sliderScale.value);
+      valScale.textContent = `${timeScale.toFixed(3).replace(/0+$/, '').replace(/\.$/, '')}×`;
+    });
+
+    document.getElementById('chk-housing').addEventListener('change', e => {
+      housingGroup.visible = e.target.checked;
+    });
+
+    document.getElementById('chk-pitch').addEventListener('change', e => {
+      pitchGroup.visible = e.target.checked;
+    });
+
+    const views = {
+      iso:   { pos: [210, 125, 315], target: [-10, 0, 0] },
+      front: { pos: [-10, 0, 400],   target: [-10, 0, 0] },
+      side:  { pos: [400, 0, 0],     target: [-10, 0, 0] },
+      top:   { pos: [-10, 400, 1],   target: [-10, 0, 0] }
+    };
+    document.querySelectorAll('.view-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const v = views[btn.dataset.view];
+        camera.position.set(...v.pos);
+        controls.target.set(...v.target);
+        controls.update();
+      });
+    });
+
+    // ==================== 10. Animation Loop ====================
+    const clock = new THREE.Clock();
+    function animate() {
+      requestAnimationFrame(animate);
+      const dt = Math.min(clock.getDelta(), 0.05);
+
+      if (playing) {
+        const omegaIn = 2 * Math.PI * inputHz * timeScale;
+        thetaIn += omegaIn * dt;
+
+        const thetaMid = -thetaIn * (Z1 / Z2);
+        const thetaOut = -thetaMid * (Z3 / Z4);
+
+        inputAsm.rotation.z = thetaIn;
+        midAsm.rotation.z = thetaMid;
+        outAsm.rotation.z = thetaOut;
+
+        for (const c of bearingCages.in)  c.rotation.z = thetaIn * ER16K_FTF;
+        for (const c of bearingCages.mid) c.rotation.z = thetaMid * ER16K_FTF;
+        for (const c of bearingCages.out) c.rotation.z = thetaOut * ER16K_FTF;
+      }
+
+      controls.update();
+      renderer.render(scene, camera);
+      updateCallouts();
+    }
+    animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+{
+  "mode": "DT9837B (OpenLayers)",
+  "device_name": "DT9837-B(00)",
+  "channels": [
+    2
+  ],
+  "sample_rate": 12800,
+  "range_v": 10.0,
+  "coupling": "AC",
+  "iepe": false,
+  "duration_s": 30.0,
+  "sensitivities_mV_per_g": [
+    null,
+    null,
+    101.4,
+    null
+  ],
+  "save": true,
+  "save_txt": true,
+  "save_wav": true,
+  "wav_format": "FLOAT32",
+  "root": "C:/Users/zsh/Desktop/数采系统/缺齿",
+  "software_version": "dt9837-gui-0.3.0",
+  "frames_per_channel": 386560,
+  "blocks": 302,
+  "frames_written_per_channel": 386560,
+  "full_sample_txt": "samples_full.txt",
+  "txt_columns": [
+    "SampleIndex",
+    "Time_s",
+    "CH2_V",
+    "CH2_m_s2"
+  ],
+  "full_sample_wav": "go2_audio_verify.wav",
+  "txt_contains_every_sample": true,
+  "requested_rate_hz": 12800,
+  "actual_rate_hz": 12799.605582524233,
+  "start_host_utc": "2026-11-23T12:40:00.399516+00:00",
+  "first_sample_host_anchor_utc_approx": "2026-11-23T12:40:00.937127+00:00",
+  "timestamp_note": "Block offsets use sample indices / device-reported rate; host absolute anchor is approximate, NOT hardware time synchronization.",
+  "wav_encoding": "IEEE Float32 volts",
+  "status": "stopped_normally",
+  "error": null,
+  "end_host_utc": "2026-11-23T12:40:31.536629+00:00"
+}

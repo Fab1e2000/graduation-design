@@ -1,0 +1,12 @@
+Key,Value
+WavFile,go2_audio_verify.wav
+TxtFile,samples_full.txt
+FirstSampleTimestamp(s),1795437858.080374479
+LastSampleApproxTimestamp(s),1795437918.282229424
+SampleRate(Hz),5120
+ActualSampleRate(Hz),5119.842233
+TotalFrames,308224
+NumChannels,1
+ActiveChannels,2
+TimestampAnchorMode,approximate_host_time_after_driver_start
+TimestampFormula,FirstSampleTimestamp+SampleIndex/ActualSampleRate
