@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>齿轮振动调制与边频带 · 交互教学演示</title>
+  <style>
+    :root {
+      --bg: #f3f6fa;
+      --card: #ffffff;
+      --border: rgba(15, 23, 42, 0.10);
+      --text: #0f172a;
+      --sub: #475569;
+      --muted: #64748b;
+      --blue: #2563eb;
+      --amber: #d97706;
+      --red: #dc2626;
+      --green: #059669;
+      --purple: #7c3aed;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 16px 20px 28px;
+    }
+
+    .container {
+      max-width: 1360px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    header {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 20px;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    header p {
+      font-size: 13px;
+      color: var(--sub);
+      margin-top: 3px;
+    }
+
+    .preset-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .btn {
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      color: var(--text);
+      padding: 8px 13px;
+      border-radius: 9px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.16s ease;
+    }
+
+    .btn:hover { background: #eef2ff; border-color: rgba(37, 99, 235, 0.35); }
+    .btn.active {
+      background: var(--blue);
+      color: #fff;
+      border-color: var(--blue);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    @media (max-width: 1024px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 15px 17px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: var(--blue);
+    }
+
+    .left-col {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      border-radius: 10px;
+      background: #fbfdff;
+      border: 1px solid rgba(15, 23, 42, 0.07);
+    }
+
+    .control-group {
+      margin-bottom: 12px;
+    }
+
+    .control-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      margin-bottom: 4px;
+    }
+
+    .control-header span.val {
+      font-weight: 700;
+      color: var(--blue);
+      font-variant-numeric: tabular-nums;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--blue);
+      cursor: pointer;
+    }
+
+    .mode-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 6px;
+      margin-bottom: 12px;
+    }
+
+    .mode-btn {
+      padding: 8px 10px;
+      border-radius: 9px;
+      border: 1.5px solid var(--border);
+      background: #f8fafc;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+
+    .mode-btn.active-mul {
+      background: #fef2f2;
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .mode-btn.active-add {
+      background: #ecfdf5;
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .formula-box {
+      background: linear-gradient(135deg, #f8faff 0%, #f5f3ff 100%);
+      border: 1px solid rgba(124, 58, 237, 0.22);
+      border-radius: 12px;
+      padding: 13px 16px;
+      font-size: 13.5px;
+    }
+
+    .formula-main {
+      font-family: "SF Mono", Menlo, Consolas, monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--purple);
+      background: rgba(255, 255, 255, 0.85);
+      padding: 8px 12px;
+      border-radius: 8px;
+      margin: 8px 0;
+      border: 1px solid rgba(124, 58, 237, 0.14);
+      overflow-x: auto;
+    }
+
+    .explain-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    @media (max-width: 900px) {
+      .explain-grid { grid-template-columns: 1fr; }
+    }
+
+    .explain-item {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 12.5px;
+      color: var(--sub);
+    }
+
+    .explain-item strong {
+      display: block;
+      color: var(--text);
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+
+    .live-note {
+      margin-top: 8px;
+      padding: 9px 11px;
+      border-radius: 9px;
+      background: #fffbeb;
+      border: 1px solid rgba(217, 119, 6, 0.28);
+      font-size: 12.5px;
+      color: #92400e;
+    }
+
+    .play-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div>
+        <h1>齿轮振动「调制」与「边频带」交互教学演示</h1>
+        <p>一分钟直观搞懂：为什么齿轮咬合（高频）叠加弹簧晃动或单齿缺失（低频）后，频谱左右会对称甩出 ±f<sub>m</sub> 边频带？</p>
+      </div>
+      <div class="preset-bar">
+        <button class="btn" id="preset-healthy" onclick="applyPreset('healthy')">① 纯健康啮合（无调制）</button>
+        <button class="btn active" id="preset-modal" onclick="applyPreset('modal')">② 弹簧固有晃动（1740 ± 251 Hz）</button>
+        <button class="btn" id="preset-missing" onclick="applyPreset('missing')">③ 单齿缺失冲击（1740 ± 9.16 Hz）</button>
+      </div>
+    </header>
+
+    <div class="main-grid">
+      <!-- 左侧：物理动画 + 交互控制台 -->
+      <div class="left-col">
+        <div class="card">
+          <div class="card-title">
+            <span>物理现象动画（放慢展示）</span>
+            <span class="badge" id="anim-badge">弹簧晃动调制</span>
+          </div>
+          <canvas id="gearCanvas" data-h="250" style="height:250px;"></canvas>
+          <div class="play-row">
+            <button class="btn" id="btn-pause" onclick="togglePlay()" style="flex:1;">暂停动画</button>
+          </div>
+          <div class="live-note" id="scene-note">
+            齿轮在快速咬合（高频 f<sub>c</sub>）的同时，受弹性轴承弹簧影响上下微微弹跳（低频 251 Hz）。压紧时咬合冲击大、松开时咬合冲击小 → 振幅被周期性“拧大拧小”，这就是<strong>幅值调制</strong>。
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>动手实验：拖滑块看频谱怎么变</span>
+          </div>
+
+          <div style="font-size:12.5px; color:var(--sub); margin-bottom:4px;">关键对比：两种“叠加方式”天差地别</div>
+          <div class="mode-switch">
+            <button class="mode-btn active-mul" id="mode-mul" onclick="setMode('mul')">
+              相乘（调制）<br><small style="font-weight:400;">会甩出边频带！</small>
+            </button>
+            <button class="mode-btn" id="mode-add" onclick="setMode('add')">
+              直接相加<br><small style="font-weight:400;">不会出边频带</small>
+            </button>
+          </div>
+
+          <div class="control-group">
+            <div class="control-header">
+              <span>高频啮合载波 f<sub>c</sub></span>
+              <span class="val" id="val-fc">1740 Hz</span>
+            </div>
+            <input type="range" id="slider-fc" min="800" max="2000" step="10" value="1740" oninput="onSliderChange()" />
+          </div>
+
+          <div class="control-group">
+            <div class="control-header">
+              <span>低频晃动 / 故障频率 f<sub>m</sub></span>
+              <span class="val" id="val-fm">251 Hz</span>
+            </div>
+            <input type="range" id="slider-fm" min="10" max="400" step="1" value="251" oninput="onSliderChange()" />
+          </div>
+
+          <div class="control-group">
+            <div class="control-header">
+              <span>调制深度 m（晃动/缺齿有多猛）</span>
+              <span class="val" id="val-m">75%</span>
+            </div>
+            <input type="range" id="slider-m" min="0" max="100" step="1" value="75" oninput="onSliderChange()" />
+          </div>
+
+          <div style="font-size:12px; color:var(--muted);">
+            小实验：试着把 <strong>调制深度 m</strong> 从 0% 慢慢拖到 100%，观察右侧频谱里 <strong>红柱两侧的蓝色边频柱</strong> 是怎么从无到有长出来的！
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧：时域三行拆解 + 实时频谱 + 公式揭秘 -->
+      <div class="right-col">
+        <div class="card">
+          <div class="card-title">
+            <span>时域波形：高频啮合 × 低频晃动 = 起伏波包</span>
+            <span class="badge">时间轴（局部放大）</span>
+          </div>
+          <canvas id="waveCanvas" data-h="275" style="height:275px;"></canvas>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>频域频谱（实时 FFT）：中心红柱 f<sub>c</sub> 与对称蓝柱 f<sub>c</sub> ± f<sub>m</sub></span>
+            <span class="badge" id="spec-badge">实测对应：1489 / 1740 / 1991 Hz</span>
+          </div>
+          <canvas id="specCanvas" data-h="225" style="height:225px;"></canvas>
+        </div>
+
+        <div class="formula-box">
+          <strong>一句话数学揭秘（中学“积化和差”公式）：</strong>
+          <div class="formula-main" id="formula-live">
+            [1 + 0.75·cos(2π·251t)] × cos(2π·1740t) = cos(2π·1740t) + 0.375·cos(2π·1489t) + 0.375·cos(2π·1991t)
+          </div>
+          <div class="explain-grid">
+            <div class="explain-item">
+              <strong>1. 为什么不是“相加”？</strong>
+              两个波直接相加，频谱里只会在各自位置（251 Hz 和 1740 Hz）各立一根柱子，互不干扰。
+            </div>
+            <div class="explain-item">
+              <strong>2. 为什么物理上是“相乘”？</strong>
+              弹簧晃动改变了齿面压紧程度，把啮合冲击“一会儿放大、一会儿缩小”——这就是低频去<strong>乘</strong>高频。
+            </div>
+            <div class="explain-item">
+              <strong>3. 相乘必然裂出左右边频</strong>
+              余弦相乘按积化和差拆开，自动变成 <code>f_c - f_m</code> 和 <code>f_c + f_m</code> 两根对称边频！如果是缺齿尖脉冲，还会裂出一整排 <code>±nf_m</code>。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      preset: 'modal',   // 'healthy' | 'modal' | 'missing'
+      mode: 'mul',       // 'mul' | 'add'
+      fc: 1740,          // Hz
+      fm: 251,           // Hz
+      depth: 0.75,       // 0 ~ 1
+      playing: true,
+      phase: 0,
+    };
+
+    const gearCanvas = document.getElementById('gearCanvas');
+    const waveCanvas = document.getElementById('waveCanvas');
+    const specCanvas = document.getElementById('specCanvas');
+
+    const canvasState = new Map();
+
+    function resizeAllCanvases() {
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      [gearCanvas, waveCanvas, specCanvas].forEach(canvas => {
+        const w = Math.max(280, Math.floor(canvas.clientWidth));
+        const h = parseInt(canvas.dataset.h, 10);
+        canvas.width = Math.floor(w * dpr);
+        canvas.height = Math.floor(h * dpr);
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        canvasState.set(canvas, { ctx, w, h });
+      });
+    }
+
+    function setupHiDPI(canvas) {
+      if (!canvasState.has(canvas)) {
+        resizeAllCanvases();
+      }
+      return canvasState.get(canvas);
+    }
+
+    function applyPreset(name) {
+      state.preset = name;
+      ['healthy', 'modal', 'missing'].forEach(p => {
+        document.getElementById('preset-' + p).classList.toggle('active', p === name);
+      });
+
+      const sliderFc = document.getElementById('slider-fc');
+      const sliderFm = document.getElementById('slider-fm');
+      const sliderM = document.getElementById('slider-m');
+
+      if (name === 'healthy') {
+        state.mode = 'mul';
+        state.fc = 1740;
+        state.fm = 251;
+        state.depth = 0.0;
+        document.getElementById('anim-badge').textContent = '纯健康匀速啮合';
+        document.getElementById('scene-note').innerHTML =
+          '健康齿轮平稳咬合、无明显晃动调制（m = 0%）。时域波形等幅整齐，频谱上只在中心 <strong>1740 Hz</strong> 处立着一根孤峰，左右干干净净。';
+      } else if (name === 'modal') {
+        state.mode = 'mul';
+        state.fc = 1740;
+        state.fm = 251;
+        state.depth = 0.75;
+        document.getElementById('anim-badge').textContent = '弹簧固有晃动调制';
+        document.getElementById('scene-note').innerHTML =
+          '对应我们仿真图 1 的现象：齿轮以 <strong>1740 Hz</strong> 咬合，同时在弹性轴承弹簧上以 <strong>251 Hz</strong> 微微弹跳。压紧时波大、松开时波小 → 频谱左右对称甩出 <strong>1489 Hz</strong> 与 <strong>1991 Hz</strong>！';
+      } else if (name === 'missing') {
+        state.mode = 'mul';
+        state.fc = 1740;
+        state.fm = 9.16;
+        state.depth = 0.90;
+        document.getElementById('anim-badge').textContent = '单齿缺失冲击调制';
+        document.getElementById('scene-note').innerHTML =
+          '对应未来缺齿仿真：大齿轮缺一颗牙，中间轴每转一圈（<strong>9.16 Hz</strong>）在缺口处猛撞一次！由于是尖锐脉冲而非光滑正弦，频谱左右会对称长出<strong>一整排</strong>间距 9.16 Hz 的边频带！';
+      }
+
+      sliderFc.value = state.fc;
+      sliderFm.value = Math.max(10, Math.round(state.fm));
+      sliderM.value = Math.round(state.depth * 100);
+      updateModeButtons();
+      syncLabels();
+      drawWaves();
+      drawSpectrum();
+    }
+
+    function setMode(m) {
+      state.mode = m;
+      updateModeButtons();
+      syncLabels();
+      drawWaves();
+      drawSpectrum();
+    }
+
+    function updateModeButtons() {
+      const bm = document.getElementById('mode-mul');
+      const ba = document.getElementById('mode-add');
+      bm.className = 'mode-btn' + (state.mode === 'mul' ? ' active-mul' : '');
+      ba.className = 'mode-btn' + (state.mode === 'add' ? ' active-add' : '');
+    }
+
+    function onSliderChange() {
+      state.fc = parseFloat(document.getElementById('slider-fc').value);
+      state.fm = parseFloat(document.getElementById('slider-fm').value);
+      state.depth = parseFloat(document.getElementById('slider-m').value) / 100.0;
+      if (state.preset === 'missing' && Math.abs(state.fm - 9.16) > 1.5) {
+        state.preset = 'modal';
+        ['healthy', 'modal', 'missing'].forEach(p => {
+          document.getElementById('preset-' + p).classList.toggle('active', false);
+        });
+      }
+      syncLabels();
+      drawWaves();
+      drawSpectrum();
+    }
+
+    function syncLabels() {
+      const fmTxt = state.preset === 'missing' ? '9.16' : state.fm.toFixed(0);
+      document.getElementById('val-fc').textContent = `${state.fc.toFixed(0)} Hz`;
+      document.getElementById('val-fm').textContent = `${fmTxt} Hz`;
+      document.getElementById('val-m').textContent = `${Math.round(state.depth * 100)}%`;
+
+      const fLeft = (state.fc - state.fm).toFixed(state.preset === 'missing' ? 1 : 0);
+      const fRight = (state.fc + state.fm).toFixed(state.preset === 'missing' ? 1 : 0);
+      const halfM = (state.depth / 2).toFixed(3);
+
+      const fBox = document.getElementById('formula-live');
+      const specBadge = document.getElementById('spec-badge');
+
+      if (state.mode === 'add') {
+        fBox.textContent = `直接相加：cos(2π·${state.fc}t) + ${state.depth.toFixed(2)}·cos(2π·${fmTxt}t)  →  只出现 ${fmTxt} Hz 与 ${state.fc} Hz，无边频带！`;
+        specBadge.textContent = `相加模式：仅 ${fmTxt} Hz 与 ${state.fc} Hz`;
+      } else if (state.preset === 'missing') {
+        fBox.textContent = `脉冲调制：[1 + 缺齿周期脉冲(9.16 Hz)] × cos(2π·${state.fc}t)  →  在 ${state.fc} Hz 两侧裂出 ±9.16, ±18.32, ±27.48 Hz 一排边频！`;
+        specBadge.textContent = `缺齿边频：${state.fc} ± n×9.16 Hz`;
+      } else if (state.depth === 0) {
+        fBox.textContent = `无调制：1.00 × cos(2π·${state.fc}t)  →  频谱仅中心 ${state.fc} Hz 一根孤峰`;
+        specBadge.textContent = `纯中心峰：${state.fc} Hz`;
+      } else {
+        fBox.textContent = `[1 + ${state.depth.toFixed(2)}·cos(2π·${fmTxt}t)] × cos(2π·${state.fc}t) = cos(2π·${state.fc}t) + ${halfM}·cos(2π·${fLeft}t) + ${halfM}·cos(2π·${fRight}t)`;
+        specBadge.textContent = `三峰位置：${fLeft} / ${state.fc} / ${fRight} Hz`;
+      }
+    }
+
+    function togglePlay() {
+      state.playing = !state.playing;
+      document.getElementById('btn-pause').textContent = state.playing ? '暂停动画' : '继续播放';
+    }
+
+    // 计算调制包络函数（正弦或周期尖脉冲）
+    function envelopeFunc(t) {
+      if (state.preset === 'missing') {
+        // 每周期 1/fm 出现一次高斯冲击脉冲
+        const T = 1.0 / state.fm;
+        const phase = ((t % T) + T) % T;
+        const dist = Math.min(phase, T - phase) / T; // 0~0.5
+        const pulse = Math.exp(-Math.pow(dist / 0.065, 2));
+        return pulse; // 0 ~ 1
+      }
+      return Math.cos(2 * Math.PI * state.fm * t); // -1 ~ 1
+    }
+
+    // 1. 绘制左侧齿轮+弹簧动画
+    function drawGearScene() {
+      const { ctx, w, h } = setupHiDPI(gearCanvas);
+      ctx.clearRect(0, 0, w, h);
+
+      const t = state.phase;
+      const bounce = state.depth > 0
+        ? (state.preset === 'missing'
+            ? -14 * state.depth * Math.exp(-Math.pow(((((t * 0.55) % 1) + 1) % 1 - 0.5) / 0.09, 2))
+            : 10 * state.depth * Math.sin(t * 2.4))
+        : 0;
+
+      const cx1 = w * 0.33;
+      const cy1 = h * 0.52 + bounce;
+      const r1 = 44;
+
+      const cx2 = w * 0.68;
+      const cy2 = h * 0.52 - bounce * 0.35;
+      const r2 = 64;
+
+      // 弹簧支承示意（下方）
+      function drawSpring(x, yTop, yBot, color) {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(x, yTop);
+        const coils = 5;
+        const step = (yBot - yTop) / coils;
+        for (let i = 0; i < coils; i++) {
+          const y1 = yTop + step * (i + 0.25);
+          const y2 = yTop + step * (i + 0.75);
+          ctx.lineTo(x - 7, y1);
+          ctx.lineTo(x + 7, y2);
+        }
+        ctx.lineTo(x, yBot);
+        ctx.stroke();
+
+        // 底座
+        ctx.strokeStyle = '#64748b';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(x - 16, yBot);
+        ctx.lineTo(x + 16, yBot);
+        ctx.stroke();
+      }
+
+      drawSpring(cx1, cy1 + r1 * 0.5, h - 18, '#2563eb');
+      drawSpring(cx2, cy2 + r2 * 0.5, h - 18, '#7c3aed');
+
+      function drawGear(cx, cy, r, teeth, rot, fill, stroke, missingToothIdx = -1) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(rot);
+
+        ctx.fillStyle = fill;
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        const outer = r + 7;
+        const inner = r - 4;
+        for (let i = 0; i < teeth; i++) {
+          const a0 = (i / teeth) * Math.PI * 2;
+          const a1 = ((i + 0.25) / teeth) * Math.PI * 2;
+          const a2 = ((i + 0.55) / teeth) * Math.PI * 2;
+          const a3 = ((i + 0.8) / teeth) * Math.PI * 2;
+          const isMiss = i === missingToothIdx;
+          const rTip = isMiss ? inner - 3 : outer;
+          if (i === 0) ctx.moveTo(inner * Math.cos(a0), inner * Math.sin(a0));
+          else ctx.lineTo(inner * Math.cos(a0), inner * Math.sin(a0));
+          ctx.lineTo(rTip * Math.cos(a1), rTip * Math.sin(a1));
+          ctx.lineTo(rTip * Math.cos(a2), rTip * Math.sin(a2));
+          ctx.lineTo(inner * Math.cos(a3), inner * Math.sin(a3));
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // 标出缺齿红框
+        if (missingToothIdx >= 0) {
+          const am = ((missingToothIdx + 0.4) / teeth) * Math.PI * 2;
+          ctx.fillStyle = '#dc2626';
+          ctx.beginPath();
+          ctx.arc((r + 2) * Math.cos(am), (r + 2) * Math.sin(am), 4.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // 中心轴孔
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      const rot1 = t * 1.8;
+      const rot2 = -rot1 * (12 / 18) + 0.16;
+      drawGear(cx1, cy1, r1, 12, rot1, 'rgba(37, 99, 235, 0.14)', '#2563eb', -1);
+      drawGear(cx2, cy2, r2, 18, rot2, 'rgba(124, 58, 237, 0.14)', '#7c3aed', state.preset === 'missing' ? 0 : -1);
+
+      // 啮合点压力闪烁提示
+      const meshX = (cx1 * r2 + cx2 * r1) / (r1 + r2);
+      const meshY = (cy1 + cy2) / 2;
+      const pulseR = 6 + Math.abs(bounce) * 0.7;
+      ctx.fillStyle = 'rgba(220, 38, 38, 0.25)';
+      ctx.beginPath();
+      ctx.arc(meshX, meshY, pulseR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 标注文字
+      ctx.fillStyle = '#334155';
+      ctx.font = '600 12px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('小齿轮 RP1', cx1, 22);
+      ctx.fillText('大齿轮 RP2', cx2, 22);
+      ctx.fillStyle = '#64748b';
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.fillText('弹性轴承弹簧', cx1, h - 4);
+      ctx.fillText('弹性轴承弹簧', cx2, h - 4);
+    }
+
+    // 2. 绘制三行同步时域波形
+    function drawWaves() {
+      const { ctx, w, h } = setupHiDPI(waveCanvas);
+      ctx.clearRect(0, 0, w, h);
+
+      const padL = 52, padR = 16, padT = 18, padB = 22;
+      const plotW = w - padL - padR;
+      const rowH = (h - padT - padB) / 3;
+
+      // 选择合适的显示时间窗：保证能看清约 3~4 个调制周期
+      const T_win = state.preset === 'missing' ? 0.35 : Math.min(0.04, Math.max(0.012, 3.2 / state.fm));
+      // 为了在缺齿 9.16 Hz 长窗下也能肉眼看清高频波纹，绘图载波视觉频率做适度封顶
+      const fcVis = state.preset === 'missing' ? 140 : Math.min(state.fc, 2200);
+      const N = 900;
+
+      const rows = [
+        {
+          title: `① 高频啮合载波（${state.fc.toFixed(0)} Hz，等幅均匀咬合）`,
+          color: '#2563eb',
+          fn: (t) => Math.cos(2 * Math.PI * fcVis * t),
+          env: null,
+        },
+        {
+          title: state.preset === 'missing'
+            ? `② 低频缺齿冲击包络（9.16 Hz，每转一圈撞一下，深度 ${Math.round(state.depth * 100)}%）`
+            : `② 低频弹簧晃动包络（${state.fm.toFixed(0)} Hz，深度 ${Math.round(state.depth * 100)}%）`,
+          color: '#059669',
+          fn: (t) => state.depth * envelopeFunc(t),
+          env: null,
+        },
+        {
+          title: state.mode === 'mul'
+            ? '③ 调制后真实振动 = ① × (1 + ②)  —— 注意红色虚线包络起伏！'
+            : '③ 直接相加结果 = ① + ②  —— 波形只是整体上下漂移，幅值本身没被拧大拧小',
+          color: '#7c3aed',
+          fn: (t) => {
+            const c = Math.cos(2 * Math.PI * fcVis * t);
+            const m = state.depth * envelopeFunc(t);
+            return state.mode === 'mul' ? (1 + m) * c * 0.55 : (c + m) * 0.55;
+          },
+          env: (t) => {
+            const m = state.depth * envelopeFunc(t);
+            return state.mode === 'mul' ? (1 + m) * 0.55 : null;
+          },
+        },
+      ];
+
+      rows.forEach((row, rIdx) => {
+        const yTop = padT + rIdx * rowH;
+        const yMid = yTop + rowH * 0.56;
+        const ampPx = rowH * 0.34;
+
+        // 零线
+        ctx.strokeStyle = 'rgba(15, 23, 42, 0.12)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padL, yMid);
+        ctx.lineTo(padL + plotW, yMid);
+        ctx.stroke();
+
+        // 行标题
+        ctx.fillStyle = '#0f172a';
+        ctx.font = '600 11.5px -apple-system, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(row.title, padL, yTop + 12);
+
+        // 画波形
+        ctx.strokeStyle = row.color;
+        ctx.lineWidth = rIdx === 2 ? 1.25 : 1.35;
+        ctx.beginPath();
+        for (let i = 0; i <= N; i++) {
+          const t = (i / N) * T_win;
+          const x = padL + (i / N) * plotW;
+          const y = yMid - row.fn(t) * ampPx;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // 若为调制模式，第3行叠加红色上下包络虚线
+        if (row.env && state.mode === 'mul' && state.depth > 0.01) {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(220, 38, 38, 0.78)';
+          ctx.lineWidth = 1.4;
+          ctx.setLineDash([5, 4]);
+          [1, -1].forEach(sign => {
+            ctx.beginPath();
+            for (let i = 0; i <= 240; i++) {
+              const t = (i / 240) * T_win;
+              const x = padL + (i / 240) * plotW;
+              const e = row.env(t);
+              const y = yMid - sign * e * ampPx;
+              if (i === 0) ctx.moveTo(x, y);
+              else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+          });
+          ctx.restore();
+        }
+      });
+
+      // 底部时间标尺
+      ctx.fillStyle = '#64748b';
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(`时间窗口：0 ~ ${(T_win * 1000).toFixed(1)} ms`, padL + plotW, h - 5);
+    }
+
+    // 3. 绘制右侧精确解析频谱图（无频谱泄漏干扰，概念最清晰）
+    function drawSpectrum() {
+      const { ctx, w, h } = setupHiDPI(specCanvas);
+      ctx.clearRect(0, 0, w, h);
+
+      const padL = 52, padR = 24, padT = 26, padB = 34;
+      const plotW = w - padL - padR;
+      const plotH = h - padT - padB;
+
+      // 缺齿场景自动把横轴聚焦到 fc ± 60 Hz，以便看清 ±9.16 Hz 密集边频；其余场景显示 0 ~ 2500 Hz
+      const isZoomMissing = state.preset === 'missing' && state.mode === 'mul';
+      const fMin = isZoomMissing ? state.fc - 60 : 0;
+      const fMax = isZoomMissing ? state.fc + 60 : 2500;
+      const fToX = (f) => padL + ((f - fMin) / (fMax - fMin)) * plotW;
+
+      // 网格与坐标轴
+      ctx.strokeStyle = 'rgba(15, 23, 42, 0.08)';
+      ctx.lineWidth = 1;
+      const step = isZoomMissing ? 20 : 250;
+      const firstTick = Math.ceil(fMin / step) * step;
+      ctx.fillStyle = '#64748b';
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+
+      for (let f = firstTick; f <= fMax + 0.1; f += step) {
+        const x = fToX(f);
+        ctx.beginPath();
+        ctx.moveTo(x, padT);
+        ctx.lineTo(x, padT + plotH);
+        ctx.stroke();
+        ctx.fillText(`${Math.round(f)}`, x, padT + plotH + 15);
+      }
+
+      // 基线
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(padL, padT + plotH);
+      ctx.lineTo(padL + plotW, padT + plotH);
+      ctx.stroke();
+
+      ctx.fillStyle = '#475569';
+      ctx.textAlign = 'center';
+      ctx.fillText(
+        isZoomMissing ? '频率 (Hz)（已自动放大至中心 ±60 Hz，清晰查看 9.16 Hz 边频带）' : '频率 (Hz)（0 ~ 2500 Hz）',
+        padL + plotW / 2,
+        h - 5
+      );
+
+      // 构造要画的谱线数组：{ f, amp, color, label }
+      const lines = [];
+      if (state.mode === 'add') {
+        lines.push({ f: state.fc, amp: 1.0, color: '#dc2626', label: `f_c = ${state.fc} Hz` });
+        if (state.depth > 0.01) {
+          lines.push({ f: state.fm, amp: state.depth, color: '#059669', label: `f_m = ${state.fm.toFixed(0)} Hz` });
+        }
+      } else if (state.preset === 'missing') {
+        lines.push({ f: state.fc, amp: 1.0, color: '#dc2626', label: `${state.fc} Hz` });
+        // 周期脉冲的傅里叶级数边频：±1, ±2, ±3, ±4, ±5 阶，幅值缓慢衰减
+        const weights = [0.46, 0.36, 0.25, 0.16, 0.09];
+        weights.forEach((wt, idx) => {
+          const k = idx + 1;
+          const a = state.depth * wt;
+          if (a > 0.01) {
+            lines.push({ f: state.fc - k * state.fm, amp: a, color: '#2563eb', label: k <= 2 ? `-${k}f_m` : '' });
+            lines.push({ f: state.fc + k * state.fm, amp: a, color: '#2563eb', label: k <= 2 ? `+${k}f_m` : '' });
+          }
+        });
+      } else {
+        // 标准余弦幅值调制：fc (1.0) 和 fc ± fm (m/2)
+        lines.push({ f: state.fc, amp: 1.0, color: '#dc2626', label: `中心 ${state.fc} Hz` });
+        if (state.depth > 0.01) {
+          const sbAmp = state.depth * 0.5;
+          lines.push({ f: state.fc - state.fm, amp: sbAmp, color: '#2563eb', label: `${(state.fc - state.fm).toFixed(0)} Hz` });
+          lines.push({ f: state.fc + state.fm, amp: sbAmp, color: '#2563eb', label: `${(state.fc + state.fm).toFixed(0)} Hz` });
+        }
+      }
+
+      // 画对称间距箭头（在调制模式下）
+      if (state.mode === 'mul' && state.depth > 0.05 && !isZoomMissing) {
+        const xC = fToX(state.fc);
+        const xL = fToX(state.fc - state.fm);
+        const xR = fToX(state.fc + state.fm);
+        const yArr = padT + 14;
+        ctx.strokeStyle = 'rgba(37, 99, 235, 0.55)';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.moveTo(xL, yArr);
+        ctx.lineTo(xR, yArr);
+        ctx.stroke();
+
+        ctx.fillStyle = '#2563eb';
+        ctx.font = '600 11px -apple-system, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`-${state.fm.toFixed(0)} Hz`, (xL + xC) / 2, yArr - 4);
+        ctx.fillText(`+${state.fm.toFixed(0)} Hz`, (xR + xC) / 2, yArr - 4);
+      }
+
+      // 绘制每一根谱线
+      lines.forEach(item => {
+        if (item.f < fMin || item.f > fMax) return;
+        const x = fToX(item.f);
+        const barH = item.amp * (plotH * 0.80);
+        const yTop = padT + plotH - barH;
+
+        ctx.strokeStyle = item.color;
+        ctx.lineWidth = item.color === '#dc2626' ? 3.2 : 2.6;
+        ctx.beginPath();
+        ctx.moveTo(x, padT + plotH);
+        ctx.lineTo(x, yTop);
+        ctx.stroke();
+
+        ctx.fillStyle = item.color;
+        ctx.beginPath();
+        ctx.arc(x, yTop, 3.6, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (item.label) {
+          ctx.font = '600 11px -apple-system, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(item.label, x, yTop - 7);
+        }
+      });
+
+      // Y轴标签
+      ctx.save();
+      ctx.translate(15, padT + plotH / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillStyle = '#475569';
+      ctx.font = '11px -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('相对幅值', 0, 0);
+      ctx.restore();
+    }
+
+    function animate() {
+      if (state.playing) {
+        state.phase += 0.035;
+      }
+      drawGearScene();
+      requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', () => {
+      resizeAllCanvases();
+      drawGearScene();
+      drawWaves();
+      drawSpectrum();
+    });
+
+    // 初始化
+    resizeAllCanvases();
+    applyPreset('modal');
+    animate();
+  </script>
+</body>
+</html>
