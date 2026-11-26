@@ -145,8 +145,8 @@ def plot_all9_overview(out_path: Path) -> pd.DataFrame:
 
 
 def plot_zoom_and_sim(out_path: Path) -> None:
-    """图3：30 Hz 工况下三测点局部 0.2 s 细节放大 + 健康仿真（0~0.5 s）直观对比。"""
-    fig, axes = plt.subplots(4, 1, figsize=(12, 9.5))
+    """图3：30 Hz 工况下三测点局部 0.2 s（同横纵轴分度）+ 健康仿真稳态 0.2 s（同横轴分度）直观对比。"""
+    fig, axes = plt.subplots(4, 1, figsize=(12, 9.5), sharex=True)
 
     cases_30 = [
         ("第一级-30", "#1f77b4", "实测 · 第一级-30（输入电机侧，15.0~15.2 s）"),
@@ -160,25 +160,28 @@ def plot_zoom_and_sim(out_path: Path) -> None:
         axes[i].plot(t[mask] - 15.0, acc[mask], color=color, linewidth=0.8)
         axes[i].set_title(title, fontsize=10.5, fontweight="bold")
         axes[i].set_ylabel(r"加速度 ($\mathrm{m/s^2}$)", fontsize=9)
+        axes[i].set_ylim(-0.55, 0.55)
+        axes[i].set_yticks([-0.5, -0.25, 0.0, 0.25, 0.5])
         axes[i].grid(True, alpha=0.3)
-        axes[i].set_xlim(0, 0.2)
-    axes[2].set_xlabel("相对时间 (s)（窗口长度 0.2 s，输入轴转 6 圈）", fontsize=9)
 
-    # 第4行：健康仿真数据 RP2_A2（中间轴 Y 向，已换算为 m/s^2）
+    # 第4行：健康仿真数据 RP2_A2，取稳态段 0.10 ~ 0.30 s（与上面实测完全相同的 0.2 s 时间分度）
     t_sim, acc_sim, fs_sim, meta_sim = load_simulation_csv(column="RP2_A2", trim_start_s=0.0)
-    steady_mask = t_sim >= 0.05
-    sim_rms = float(np.sqrt(np.mean(acc_sim[steady_mask] ** 2)))
-    sim_peak = float(np.max(np.abs(acc_sim[steady_mask])))
+    sim_mask = (t_sim >= 0.10) & (t_sim <= 0.30)
+    t_sim_win = t_sim[sim_mask] - 0.10
+    acc_sim_win = acc_sim[sim_mask]
 
-    axes[3].plot(t_sim, acc_sim, color="#9467bd", linewidth=0.7, label="仿真 RP2_A2（中间轴Y向）")
-    axes[3].axvspan(0, 0.05, color="#ffcccc", alpha=0.45, label="前 0.05 s 升速启动瞬态（分析时剔除）")
+    axes[3].plot(t_sim_win, acc_sim_win, color="#9467bd", linewidth=0.75, label="仿真 RP2_A2（中间轴Y向，稳态段 0.10~0.30 s）")
     axes[3].set_title(
-        rf"仿真 · Abaqus 健康基准（30 Hz，RP2_A2，已换算为 $\mathrm{{m/s^2}}$）——稳态段 RMS={sim_rms:.1f}, 峰值={sim_peak:.1f} $\mathrm{{m/s^2}}$",
+        r"仿真 · Abaqus 健康基准（30 Hz，RP2_A2，稳态 0.2 s 窗口）——与上方实测同时间分度，纵轴量级不同",
         fontsize=10.5,
         fontweight="bold",
     )
-    axes[3].set_xlabel("仿真时间 (s)（总长 0.5 s，注意纵轴量级与实测不同）", fontsize=9)
+    axes[3].set_xlabel("相对时间 (s)（四张图统一 0 ~ 0.2 s 窗口，输入轴转 6 圈）", fontsize=9.5)
     axes[3].set_ylabel(r"加速度 ($\mathrm{m/s^2}$)", fontsize=9)
+    axes[3].set_xlim(0.0, 0.2)
+    axes[3].set_xticks(np.arange(0.0, 0.201, 0.025))
+    axes[3].set_ylim(-1200, 1200)
+    axes[3].set_yticks([-1000, -500, 0, 500, 1000])
     axes[3].legend(loc="upper right", fontsize=9)
     axes[3].grid(True, alpha=0.3)
 
