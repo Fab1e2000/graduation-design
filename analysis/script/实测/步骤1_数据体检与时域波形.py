@@ -22,10 +22,14 @@ import numpy as np
 import pandas as pd
 from scipy.stats import kurtosis
 
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from 数据读取模块 import (
     HEALTH_CASES,
-    RESULT_DATA_DIR,
-    RESULT_GRAPH_DIR,
+    MEASURED_DATA_DIR as RESULT_DATA_DIR,
+    MEASURED_GRAPH_DIR as RESULT_GRAPH_DIR,
     STAGE_DESC,
     load_health_case,
     load_simulation_csv,

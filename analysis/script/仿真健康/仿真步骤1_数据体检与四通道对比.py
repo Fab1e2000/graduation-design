@@ -19,9 +19,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from 数据读取模块 import (
-    RESULT_DATA_DIR,
-    RESULT_GRAPH_DIR,
+    SIM_HEALTHY_DATA_DIR as RESULT_DATA_DIR,
+    SIM_HEALTHY_GRAPH_DIR as RESULT_GRAPH_DIR,
     load_simulation_csv,
 )
 

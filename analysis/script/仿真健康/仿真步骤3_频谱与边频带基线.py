@@ -1,10 +1,9 @@
 """
-仿真步骤 3（缺齿故障）：Abaqus 缺齿仿真频谱分析（0~4000 Hz 全频谱）与边频带放大
-布局与配色完全仿照健康仿真图（仿真步骤3_频谱与边频带基线.py），便于直接对照。
+仿真步骤 3：健康仿真频谱分析（0~4000 Hz 全频谱）与啮合频率两侧边频带基线
 产出：
-  1. analysis/result/data/仿真步骤3_缺齿频域特征表.csv
-  2. analysis/result/graphs/仿真步骤3_缺齿_图1_四通道全频谱_0至4000Hz.png
-  3. analysis/result/graphs/仿真步骤3_缺齿_图2_啮合频率边频带放大.png
+  1. analysis/result/data/仿真步骤3_健康频域特征基线表.csv
+  2. analysis/result/graphs/仿真步骤3_图1_四通道全频谱_0至4000Hz.png
+  3. analysis/result/graphs/仿真步骤3_图2_啮合频率边频带基线放大.png
 """
 
 from __future__ import annotations
@@ -20,9 +19,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from 数据读取模块 import (
-    RESULT_DATA_DIR,
-    RESULT_GRAPH_DIR,
+    SIM_HEALTHY_DATA_DIR as RESULT_DATA_DIR,
+    SIM_HEALTHY_GRAPH_DIR as RESULT_GRAPH_DIR,
     load_simulation_csv,
 )
 
@@ -30,11 +33,10 @@ plt.rcParams["font.sans-serif"] = ["Hiragino Sans GB", "PingFang HK", "STHeiti",
 plt.rcParams["axes.unicode_minus"] = False
 plt.rcParams["figure.dpi"] = 150
 
-SIM_FILE = "sim_missing_30Hz_12800Hz.csv"
 TRIM_START_S = 0.05
 FS_TARGET = 12800.0
 FM1 = 870.0                  # 一级啮合频率 (30 Hz * 29 齿)
-F_MID = 30.0 * 29.0 / 95.0   # 中间轴转频 ≈ 9.1579 Hz（单齿缺失理论调制频率）
+F_MID = 30.0 * 29.0 / 95.0   # 中间轴转频 ≈ 9.1579 Hz（未来缺齿的理论调制频率）
 
 CHANNELS = [
     ("RP1_A1", "输入轴 RP1 · X向 (径向)", "#1f77b4"),
@@ -46,7 +48,7 @@ CHANNELS = [
 
 def load_steady_fft(col: str) -> tuple[np.ndarray, np.ndarray]:
     """剔除前 0.05 s -> 重采样 12800 Hz -> 去均值 -> 汉宁窗单边幅值谱。"""
-    t, acc, _, _ = load_simulation_csv(filename=SIM_FILE, column=col, trim_start_s=TRIM_START_S)
+    t, acc, _, _ = load_simulation_csv(column=col, trim_start_s=TRIM_START_S)
     t_u = np.arange(t[0], t[-1], 1.0 / FS_TARGET)
     x = np.interp(t_u, t, acc)
     x = x - np.mean(x)
@@ -59,11 +61,13 @@ def load_steady_fft(col: str) -> tuple[np.ndarray, np.ndarray]:
 
 
 def peak_near(freqs: np.ndarray, amp: np.ndarray, target_hz: float, tol_hz: float = 3.5) -> float:
+    """读取目标频率 ±tol_hz 窗口内的最大幅值（考虑 0.45 s 信号 df≈2.22 Hz）。"""
     mask = np.abs(freqs - target_hz) <= tol_hz
     return float(np.max(amp[mask])) if np.any(mask) else 0.0
 
 
 def sideband_mean(freqs: np.ndarray, amp: np.ndarray, center_hz: float, f_mod: float = F_MID, orders: int = 3) -> float:
+    """计算 center_hz 两侧 ±1..orders 阶理论边频带的平均幅值。"""
     vals = []
     for k in range(1, orders + 1):
         vals.append(peak_near(freqs, amp, center_hz - k * f_mod, tol_hz=2.5))
@@ -101,10 +105,10 @@ def main() -> None:
         })
 
     df = pd.DataFrame(rows)
-    csv_path = RESULT_DATA_DIR / "仿真步骤3_缺齿频域特征表.csv"
+    csv_path = RESULT_DATA_DIR / "仿真步骤3_健康频域特征基线表.csv"
     df.to_csv(csv_path, index=False, encoding="utf-8-sig")
 
-    # === 图 1：四通道 0 ~ 4000 Hz 全频谱（完全仿照健康布局：同横轴；RP1同纵轴、RP2同纵轴） ===
+    # === 图 1：四通道 0 ~ 4000 Hz 全频谱（同横轴；RP1组同纵轴、RP2组同纵轴） ===
     fmax = 4000.0
     rp1_ymax = max(
         float(np.max(spectra["RP1_A1"][1][spectra["RP1_A1"][0] <= fmax])),
@@ -140,13 +144,13 @@ def main() -> None:
     axes[-1].set_xlim(0, fmax)
     axes[-1].set_xticks(np.arange(0, fmax + 1, 500))
     axes[-1].set_xlabel("频率 (Hz)（四通道统一横轴；RP1 两图同纵轴、RP2 两图同纵轴）", fontsize=9.5)
-    fig.suptitle("缺齿仿真（30 Hz 稳态段 · SS1.5-95 单齿全缺）四通道全频谱 0 ~ 4000 Hz", fontsize=13, fontweight="bold", y=0.995)
+    fig.suptitle("健康仿真（30 Hz 稳态段）四通道全频谱 0 ~ 4000 Hz", fontsize=13, fontweight="bold", y=0.995)
     fig.tight_layout()
-    g1 = RESULT_GRAPH_DIR / "仿真步骤3_缺齿_图1_四通道全频谱_0至4000Hz.png"
+    g1 = RESULT_GRAPH_DIR / "仿真步骤3_图1_四通道全频谱_0至4000Hz.png"
     fig.savefig(g1, bbox_inches="tight")
     plt.close(fig)
 
-    # === 图 2：1fm1 (870 Hz) 与 2fm1 (1740 Hz) 两侧边频带放大 ===
+    # === 图 2：1fm1 (870 Hz) 与 2fm1 (1740 Hz) 两侧边频带局部放大（RP2_A2 & RP1_A2） ===
     fig, axes = plt.subplots(2, 2, figsize=(13, 7.6))
     focus_rows = [
         ("RP2_A2", "主力监测通道：RP2_A2（中间轴 Y向·缺齿所在轴）", "#9467bd"),
@@ -166,7 +170,9 @@ def main() -> None:
             ymax_local = float(np.max(a[m])) * 1.22
             ax.set_ylim(0, ymax_local)
 
+            # 标出中心啮合频率
             ax.axvline(fc, color="#d62728", linestyle="--", linewidth=1.2, label=f"中心 {fc:.0f} Hz")
+            # 标出未来缺齿理论边频带 ±1, ±2, ±3 * f_mid (9.16 Hz)
             for k in (-3, -2, -1, 1, 2, 3):
                 fsb = fc + k * F_MID
                 lbl = r"理论缺齿边频 $\pm n f_{\mathrm{mid}}$ ($\pm 9.16\ \mathrm{Hz}$)" if k == 1 else None
@@ -184,17 +190,17 @@ def main() -> None:
                 ax.legend(loc="upper right", fontsize=8.2)
 
     fig.suptitle(
-        r"缺齿仿真边频带放大：观察蓝点线处（$f_c \pm n \times 9.16\ \mathrm{Hz}$）是否出现对称边频",
+        r"健康仿真边频带基线检查：蓝点线为未来缺齿理论边频位置（$f_c \pm n \times 9.16\ \mathrm{Hz}$）",
         fontsize=12.5,
         fontweight="bold",
         y=0.995,
     )
     fig.tight_layout()
-    g2 = RESULT_GRAPH_DIR / "仿真步骤3_缺齿_图2_啮合频率边频带放大.png"
+    g2 = RESULT_GRAPH_DIR / "仿真步骤3_图2_啮合频率边频带基线放大.png"
     fig.savefig(g2, bbox_inches="tight")
     plt.close(fig)
 
-    print("缺齿频域特征表已保存:", csv_path)
+    print("频域基线表已保存:", csv_path)
     print(df.to_string(index=False))
     print("\n已生成图表:")
     print(" -", g1)

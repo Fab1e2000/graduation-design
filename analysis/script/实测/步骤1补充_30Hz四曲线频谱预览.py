@@ -15,8 +15,13 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import numpy as np
 
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from 数据读取模块 import (
-    RESULT_GRAPH_DIR,
+    MEASURED_GRAPH_DIR as RESULT_GRAPH_DIR,
     load_health_case,
     load_simulation_csv,
 )

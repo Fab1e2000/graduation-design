@@ -22,6 +22,14 @@ SIM_DATA_DIR = PROJECT_ROOT / "data" / "仿真数据"
 RESULT_DATA_DIR = PROJECT_ROOT / "analysis" / "result" / "data"
 RESULT_GRAPH_DIR = PROJECT_ROOT / "analysis" / "result" / "graphs"
 
+# 按数据来源分层的输出目录
+MEASURED_DATA_DIR = RESULT_DATA_DIR / "实测"
+MEASURED_GRAPH_DIR = RESULT_GRAPH_DIR / "实测"
+SIM_HEALTHY_DATA_DIR = RESULT_DATA_DIR / "仿真健康"
+SIM_HEALTHY_GRAPH_DIR = RESULT_GRAPH_DIR / "仿真健康"
+SIM_MISSING_DATA_DIR = RESULT_DATA_DIR / "仿真缺齿"
+SIM_MISSING_GRAPH_DIR = RESULT_GRAPH_DIR / "仿真缺齿"
+
 # 9 组健康工况的标准顺序
 HEALTH_CASES: List[str] = [
     "第一级-10", "第一级-20", "第一级-30",
